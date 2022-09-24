@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import sys
+import traceback
 
 from logger import Logger
 
@@ -37,7 +39,11 @@ class DataMaker():
             return ()
 
     def split_data(self, test_size=TEST_SIZE) -> set:
-        X, y = self.get_data()
+        try:
+            X, y = self.get_data()
+        except FileNotFoundError:
+            self.log.error(traceback.format_exc())
+            sys.exit(1)
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=0)
         self.save_splitted_data(X_train, self.train_path[0])
