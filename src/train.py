@@ -1,5 +1,4 @@
 import configparser
-from doctest import Example
 import os
 import pandas as pd
 import pickle
