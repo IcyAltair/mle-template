@@ -37,9 +37,10 @@ class MultiModel():
         sc = StandardScaler()
         self.X_train = sc.fit_transform(self.X_train)
         self.X_test = sc.transform(self.X_test)
-        self.project_path = os.path.join(os.getcwd(), "experiments/")
+        self.project_path = os.path.join(os.getcwd(), "experiments")
         self.log_reg_path = os.path.join(self.project_path, "log_reg.sav")
-        self.rand_forest_path = os.path.join(self.project_path, "rand_forest.sav")
+        self.rand_forest_path = os.path.join(
+            self.project_path, "rand_forest.sav")
         self.log.info("MultiModel is ready")
 
     def log_reg(self, predict=False) -> bool:
@@ -52,12 +53,13 @@ class MultiModel():
         if predict:
             y_pred = classifier.predict(self.X_test)
             print(accuracy_score(self.y_test, y_pred))
-        pickle.dump(classifier, open(self.log_reg_path, 'wb'))
-        self.log.info(f'{self.log_reg_path} is saved')
-        return os.path.isfile(self.log_reg_path)
+        params = {'path': self.log_reg_path}
+        return self.save_model(classifier, self.log_reg_path, "LOG_REG", params)
+
 
     def rand_forest(self, n_trees=100, creterion="entropy", predict=False) -> bool:
-        classifier = RandomForestClassifier(n_estimators=n_trees, criterion=creterion)
+        classifier = RandomForestClassifier(
+            n_estimators=n_trees, criterion=creterion)
         try:
             classifier.fit(self.X_train, self.y_train)
         except Exception:
@@ -66,9 +68,19 @@ class MultiModel():
         if predict:
             y_pred = classifier.predict(self.X_test)
             print(accuracy_score(self.y_test, y_pred))
-        pickle.dump(classifier, open(self.rand_forest_path, 'wb'))
-        self.log.info(f'{self.rand_forest_path} is saved')
-        return os.path.isfile(self.rand_forest_path)
+        params = {'n_estimators': n_trees,
+                  'creterion': creterion,
+                  'path': self.rand_forest_path}
+        return self.save_model(classifier, self.rand_forest_path, "RAND_FOREST", params)
+
+    def save_model(self, classifier, path: str, name: str, params: dict) -> bool:
+        self.config[name] = params
+        os.remove('config.ini')
+        with open('config.ini', 'w') as configfile:
+            self.config.write(configfile)
+        pickle.dump(classifier, open(path, 'wb'))
+        self.log.info(f'{path} is saved')
+        return os.path.isfile(path)
 
 
 if __name__ == "__main__":
