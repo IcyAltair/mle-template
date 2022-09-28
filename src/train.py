@@ -1,4 +1,5 @@
 import configparser
+from doctest import Example
 import os
 import pandas as pd
 import pickle
@@ -38,10 +39,16 @@ class MultiModel():
         self.X_test = sc.transform(self.X_test)
         self.project_path = os.path.join(os.getcwd(), "experiments/")
         self.log_reg_path = os.path.join(self.project_path, "log_reg.sav")
+        self.rand_forest_path = os.path.join(self.project_path, "rand_forest.sav")
+        self.log.info("MultiModel is ready")
 
     def log_reg(self, predict=False) -> bool:
         classifier = LogisticRegression()
-        classifier.fit(self.X_train, self.y_train)
+        try:
+            classifier.fit(self.X_train, self.y_train)
+        except Exception:
+            self.log.error(traceback.format_exc())
+            sys.exit(1)
         if predict:
             y_pred = classifier.predict(self.X_test)
             print(accuracy_score(self.y_test, y_pred))
@@ -49,7 +56,22 @@ class MultiModel():
         self.log.info(f'{self.log_reg_path} is saved')
         return os.path.isfile(self.log_reg_path)
 
+    def rand_forest(self, n_trees=100, creterion="entropy", predict=False) -> bool:
+        classifier = RandomForestClassifier(n_estimators=n_trees, criterion=creterion)
+        try:
+            classifier.fit(self.X_train, self.y_train)
+        except Exception:
+            self.log.error(traceback.format_exc())
+            sys.exit(1)
+        if predict:
+            y_pred = classifier.predict(self.X_test)
+            print(accuracy_score(self.y_test, y_pred))
+        pickle.dump(classifier, open(self.rand_forest_path, 'wb'))
+        self.log.info(f'{self.rand_forest_path} is saved')
+        return os.path.isfile(self.rand_forest_path)
+
 
 if __name__ == "__main__":
     multi_model = MultiModel()
     multi_model.log_reg(predict=True)
+    multi_model.rand_forest(predict=True)
