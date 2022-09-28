@@ -1,5 +1,7 @@
 import configparser
+import os
 import pandas as pd
+import pickle
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -34,6 +36,7 @@ class MultiModel():
         sc = StandardScaler()
         self.X_train = sc.fit_transform(self.X_train)
         self.X_test = sc.transform(self.X_test)
+        self.project_path = os.path.join(os.getcwd(), "experiments/")
 
     def log_reg(self, predict=False) -> bool:
         classifier = LogisticRegression()
@@ -41,6 +44,7 @@ class MultiModel():
         if predict:
             y_pred = classifier.predict(self.X_test)
             print(accuracy_score(self.y_test, y_pred))
+        pickle.dump(classifier, open(self.project_path + "log_reg.sav", 'wb'))
         return True
 
 
