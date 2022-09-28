@@ -49,7 +49,7 @@ class DataMaker():
             self.log.error(traceback.format_exc())
             sys.exit(1)
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=0)
+            X, y, test_size=test_size, random_state=0)
         self.save_splitted_data(X_train, self.train_path[0])
         self.save_splitted_data(y_train, self.train_path[1])
         self.save_splitted_data(X_test, self.test_path[0])

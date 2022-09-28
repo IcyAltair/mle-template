@@ -55,10 +55,18 @@ class MultiModel():
         params = {'path': self.log_reg_path}
         return self.save_model(classifier, self.log_reg_path, "LOG_REG", params)
 
-
-    def rand_forest(self, n_trees=100, creterion="entropy", predict=False) -> bool:
-        classifier = RandomForestClassifier(
-            n_estimators=n_trees, criterion=creterion)
+    def rand_forest(self, use_config: bool, n_trees=100, creterion="entropy", predict=False) -> bool:
+        if use_config:
+            try:
+                classifier = RandomForestClassifier(
+                    n_estimators=self.config.getint("RAND_FOREST","n_estimators"), criterion=self.config["RAND_FOREST"]["criterion"])
+            except KeyError:
+                self.log.error(traceback.format_exc())
+                self.log.warning(f'Using config:{use_config}, no params')
+                sys.exit(1)
+        else:
+            classifier = RandomForestClassifier(
+                n_estimators=n_trees, criterion=creterion)
         try:
             classifier.fit(self.X_train, self.y_train)
         except Exception:
@@ -68,7 +76,7 @@ class MultiModel():
             y_pred = classifier.predict(self.X_test)
             print(accuracy_score(self.y_test, y_pred))
         params = {'n_estimators': n_trees,
-                  'creterion': creterion,
+                  'criterion': creterion,
                   'path': self.rand_forest_path}
         return self.save_model(classifier, self.rand_forest_path, "RAND_FOREST", params)
 
@@ -85,4 +93,4 @@ class MultiModel():
 if __name__ == "__main__":
     multi_model = MultiModel()
     multi_model.log_reg(predict=True)
-    multi_model.rand_forest(predict=True)
+    multi_model.rand_forest(use_config=True, predict=True)
