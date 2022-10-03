@@ -175,7 +175,9 @@ class MultiModel():
         os.remove('config.ini')
         with open('config.ini', 'w') as configfile:
             self.config.write(configfile)
-        pickle.dump(classifier, open(path, 'wb'))
+        with open(path, 'wb') as f:
+            pickle.dump(classifier, f)
+
         self.log.info(f'{path} is saved')
         return os.path.isfile(path)
 
