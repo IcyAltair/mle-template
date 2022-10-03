@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+   web:
+       build: .
+       command: python predict.py -m LOG_REG -t func
+       ports:
+           - 8000:8000
+       image: altairzero/mle-template:latest
