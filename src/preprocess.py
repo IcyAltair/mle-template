@@ -42,7 +42,7 @@ class DataMaker():
             self.log.error("X and y data is not ready")
             return False
 
-    def split_data(self, test_size=TEST_SIZE) -> set:
+    def split_data(self, test_size=TEST_SIZE) -> bool:
         self.get_data()
         try:
             X = pd.read_csv(self.X_path, index_col=0)
