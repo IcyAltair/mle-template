@@ -15,11 +15,11 @@ options {
             steps {
                 script {
                     try {
-                        bat 'cd mle_template && docker-compose build'
+                        bat 'cd mle-template && docker-compose build'
                         }
                     finally {
                     bat '''
-                        cd mle_template
+                        cd mle-template
                         docker-compose up -d
                         '''
                         }
