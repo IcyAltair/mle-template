@@ -44,7 +44,7 @@ options {
                             )
                             ELSE (
                                 docker logs --tail 1000 -f %containerId%
-                                docker exec -it %containerId% cd app && coverage run src/unit_tests/test_preprocess.py && coverage run -a src/unit_tests/test_training.py && coverage report -m
+                                winpty docker exec -it %containerId% cd app && coverage run src/unit_tests/test_preprocess.py && coverage run -a src/unit_tests/test_training.py && coverage report -m
                             )
                         '''
                     }
