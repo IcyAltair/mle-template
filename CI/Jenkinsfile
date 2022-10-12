@@ -22,26 +22,34 @@ options {
                     try {
                         bat 'cd mle-template && docker-compose build'
                         }
+                        /*
                     finally {
                     bat '''
                         cd mle-template
                         docker-compose up -d
                         '''
-                        }
+                        }*/
 				    }
                 }
             }
-        /*
-        stage('Start container') {
+        stage('Checkout docker logs') {
             steps {
-                sh 'ln -s /var/jenkins_home/workspace/hadoop-build_master/hadoop-cluster-docker ~/clusterPath'
-                sh 'cd ~/clusterPath'
-                sh 'ls -la'
-                dir("hadoop-cluster-docker") {
-                        sh './start-container.sh'
+                dir("mle-template") {
+                        bat '''
+                            docker-compose up -d
+                            for /f %%i in ('docker ps -qf "name=^mle-template_web_1"') do set containerId=%%i
+                            echo %containerId%
+                            IF "%containerId%" == "" (
+                                echo "No container running"
+                            )
+                            ELSE (
+                                docker logs --tail 1000 -f %containerId%
+                            )
+                        '''
                     }
             }
-            }
+        }
+        /*
         stage('Start hadoop') {
             steps {
                 dir("hadoop-cluster-docker/config") {
