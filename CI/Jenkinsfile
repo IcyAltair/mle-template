@@ -11,19 +11,19 @@ options {
                 bat 'git clone -b main https://github.com/IcyAltair/mle-template.git'
 				}
 			}
-        /*
-        stage('Create hadoop network') {
+        stage('Create and run docker image') {
             steps {
                 script {
                     try {
-                        sh 'docker network rm hadoop'
+                        bat 'docker-compose build'
                         }
                     finally {
-                    sh 'docker network create --driver=bridge hadoop'
+                    bat 'docker-compose up -d'
                         }
 				    }
                 }
             }
+        /*
         stage('Start container') {
             steps {
                 sh 'ln -s /var/jenkins_home/workspace/hadoop-build_master/hadoop-cluster-docker ~/clusterPath'
