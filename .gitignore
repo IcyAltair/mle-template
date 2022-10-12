@@ -127,4 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-/data
+
+# Place data for non local DVC
+# /data 
