@@ -1,5 +1,10 @@
 pipeline {
     agent any
+
+    environment {
+        DOCKERHUB_CREDS=credentials('mle-template')
+    }
+
 options {
         timestamps()
         skipDefaultCheckout(true)
@@ -36,6 +41,12 @@ options {
         //docker exec %containerId% cd app && coverage run src/unit_tests/test_preprocess.py && coverage run -a src/unit_tests/test_training.py && coverage report -m
         //use for single container (with auth):
         //docker run --name mle-template_web_1 cd app && coverage run src/unit_tests/test_preprocess.py && coverage run -a src/unit_tests/test_training.py && coverage report -m
+        stage('Login'){
+            steps{
+                bat 'echp $DOCKERHUB_CREDS_PSW | docker login -u $DOCKERHUB_CREDS_USR --password-stdin'
+            }
+        }
+        
         stage('Checkout docker logs and run coverage') {
             steps {
                 dir("mle-template") {
@@ -53,20 +64,12 @@ options {
                     }
             }
         }
-        /*
-        stage('Start hadoop') {
+        stage('Push to DockerHub') {
             steps {
                 dir("hadoop-cluster-docker/config") {
                         sh './start-hadoop.sh'
                     }
 				}
             }
-        stage('Run wordcount') {
-            steps {
-               dir("hadoop-cluster-docker/config") {
-                        sh './run-wordcount.sh'
-                    }
-				}
-			}*/
-		}
+	}
 }
