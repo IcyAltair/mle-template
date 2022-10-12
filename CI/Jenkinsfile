@@ -22,13 +22,13 @@ options {
                     try {
                         bat 'cd mle-template && docker-compose build'
                         }
-                        /*
+                        
                     finally {
                     bat '''
                         cd mle-template
                         docker-compose up -d
                         '''
-                        }*/
+                        }
 				    }
                 }
             }
