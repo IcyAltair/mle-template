@@ -32,6 +32,8 @@ options {
 				    }
                 }
             }
+        // use for multi containers:
+        //docker exec %containerId% cd app && coverage run src/unit_tests/test_preprocess.py && coverage run -a src/unit_tests/test_training.py && coverage report -m
         stage('Checkout docker logs and run coverage') {
             steps {
                 dir("mle-template") {
@@ -44,7 +46,7 @@ options {
                             )
                             ELSE (
                                 docker logs --tail 1000 -f %containerId%
-                                docker exec %containerId% cd app && coverage run src/unit_tests/test_preprocess.py && coverage run -a src/unit_tests/test_training.py && coverage report -m
+                                docker run --name mle-template_web_1 cd app && coverage run src/unit_tests/test_preprocess.py && coverage run -a src/unit_tests/test_training.py && coverage report -m
                             )
                         '''
                     }
