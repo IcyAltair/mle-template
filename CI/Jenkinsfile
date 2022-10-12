@@ -11,6 +11,11 @@ options {
                 bat 'git clone -b main https://github.com/IcyAltair/mle-template.git'
 				}
 			}
+        stage('Checkout repo dir') {
+            steps {
+                bat 'cd mle-template && dir'
+				}
+			}
         stage('Create and run docker container') {
             steps {
                 script {
