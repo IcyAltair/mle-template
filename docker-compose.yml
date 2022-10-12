@@ -2,7 +2,7 @@ version: '3.8'
 services:
    web:
        build: .
-       command: bash -c "python src/preprocess.py && python src/train.py && python src/predict.py -m LOG_REG -t func"
+       command: bash -c "python src/preprocess.py && python src/train.py && python src/predict.py -m LOG_REG -t func && coverage run src/unit_tests/test_preprocess.py && coverage run -a src/unit_tests/test_training.py && coverage report -m"
        ports:
            - 8000:8000
        image: altairzero/mle-template:latest
