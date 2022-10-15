@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDS=credentials('mle-template')
+        LC_ALL=C.UTF-8
     }
 
 options {
