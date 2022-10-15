@@ -13,6 +13,7 @@ options {
         stage('Clone github repository') {
             steps {
                 cleanWs()
+                bat 'chcp 1251'
                 bat 'git clone -b main https://github.com/IcyAltair/mle-template.git'
 				}
 			}
