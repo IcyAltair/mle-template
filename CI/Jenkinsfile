@@ -13,25 +13,24 @@ options {
         stage('Clone github repository') {
             steps {
                 cleanWs()
-                bat 'chcp 65001'
-                bat 'git clone -b main https://github.com/IcyAltair/mle-template.git'
+                bat 'chcp 65001 && git clone -b main https://github.com/IcyAltair/mle-template.git'
 				}
 			}
         stage('Checkout repo dir') {
             steps {
-                bat 'chcp 65001'
-                bat 'cd mle-template && dir'
+                bat 'chcp 65001 && cd mle-template && dir'
 				}
 			}
         stage('Create and run docker container') {
             steps {
                 script {
                     try {
-                        bat 'cd mle-template && docker-compose build'
+                        bat 'chcp 65001 && cd mle-template && docker-compose build'
                         }
                         
                     finally {
                     bat '''
+                        chcp 65001
                         cd mle-template
                         docker-compose up -d
                         '''
@@ -45,7 +44,7 @@ options {
         //docker run --name mle-template_web_1 cd app && coverage run src/unit_tests/test_preprocess.py && coverage run -a src/unit_tests/test_training.py && coverage report -m
         stage('Login'){
             steps{
-                bat 'echo %DOCKERHUB_CREDS_PSW% | docker login -u %DOCKERHUB_CREDS_USR% --password-stdin'
+                bat 'chcp 65001 && echo %DOCKERHUB_CREDS_PSW% | docker login -u %DOCKERHUB_CREDS_USR% --password-stdin'
             }
         }
         /*
@@ -69,22 +68,14 @@ options {
 
         stage('Push'){
             steps{
-                bat 'docker push altairzero/mle-template:latest'
+                bat 'chcp 65001 && docker push altairzero/mle-template:latest'
             }
         }
-        /*
-        stage('Push to DockerHub') {
-            steps {
-                dir("hadoop-cluster-docker/config") {
-                        sh './start-hadoop.sh'
-                    }
-				}
-            }*/
 	}
 
     post {
         always {
-            bat 'docker logout'
+            bat 'chcp 65001 && docker logout'
         }
     }
 }
