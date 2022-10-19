@@ -62,7 +62,7 @@ options {
                 dir("mle-template") {
                         bat '''
                             docker-compose up -d
-                            for /f %%i in ('docker ps -qf "name=^mle-template_web_1"') do set containerId=%%i
+                            for /f %%i in ('docker ps -qf "name=^mle-template-web-1"') do set containerId=%%i
                             echo %containerId%
                             IF "%containerId%" == "" (
                                 echo "No container running"
