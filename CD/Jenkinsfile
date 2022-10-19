@@ -34,7 +34,7 @@ options {
         stage('Run container'){
             steps{
                 bat '''
-                        docker-compose run altairzero/mle-template:latest
+                        docker run --name web -p 80:5556 -d altairzero/mle-template:latest
                 '''
             }
         }
