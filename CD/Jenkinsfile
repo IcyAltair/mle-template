@@ -1,64 +1,48 @@
 pipeline {
     agent any
+
+    environment {
+        DOCKERHUB_CREDS=credentials('mle-template')
+        LC_ALL = "en_US.UTF-8"
+        LANG    = "en_US.UTF-8"
+        LANGUAGE = "en_US.UTF-8"
+    }
+
 options {
         timestamps()
         skipDefaultCheckout(true)
 	}
     stages {
-        /*
-        stage('Configure docker') {
-            steps {
-                sh 'chmod 757 /var/run/docker.sock'
-                sh 'docker run -v /var/run/docker.sock:/var/run/docker.sock -ti docker'
-				}
-			}
-        */
-        stage('Pull docker image') {
-            steps {
-                sh 'docker pull kiwenlau/hadoop:1.0'
-				}
-			}
-        stage('Clone github repository') {
-            steps {
-                cleanWs()
-                sh 'git clone https://github.com/kiwenlau/hadoop-cluster-docker'
-				}
-			}
-        stage('Create hadoop network') {
-            steps {
-                script {
-                    try {
-                        sh 'docker network rm hadoop'
-                        }
-                    finally {
-                    sh 'docker network create --driver=bridge hadoop'
-                        }
-				    }
+
+        stage('Login'){
+            steps{
+                //withCredentials([usernamePassword(credentialsId: 'mle-template', passwordVariable: 'DOCKER_REGISTRY_PWD', usernameVariable: 'DOCKER_REGISTRY_USER')]){
+                //bat 'chcp 65001 && echo %DOCKER_REGISTRY_PWD% | docker login -u %DOCKER_REGISTRY_USER% --password-stdin'}
+                //bat 'chcp 65001 && echo %DOCKERHUB_CREDS_PSW% | docker login -u %DOCKERHUB_CREDS_USR% --password-stdin'
+                bat 'docker login -u %DOCKERHUB_CREDS_USR% -p %DOCKERHUB_CREDS_PSW%'
                 }
             }
-        stage('Start container') {
-            steps {
-                sh 'ln -s /var/jenkins_home/workspace/hadoop-build_master/hadoop-cluster-docker ~/clusterPath'
-                sh 'cd ~/clusterPath'
-                sh 'ls -la'
-                dir("hadoop-cluster-docker") {
-                        sh './start-container.sh'
-                    }
+
+        stage('Pull image'){
+            steps{
+                bat '''
+                        docker pull altairzero/mle-template:latest
+                '''
             }
+        }
+
+        stage('Run container'){
+            steps{
+                bat '''
+                        docker run --name mle-template -p 80:5556 -d altairzero/mle-template:latest
+                '''
             }
-        stage('Start hadoop') {
-            steps {
-                dir("hadoop-cluster-docker/config") {
-                        sh './start-hadoop.sh'
-                    }
-				}
-            }
-        stage('Run wordcount') {
-            steps {
-               dir("hadoop-cluster-docker/config") {
-                        sh './run-wordcount.sh'
-                    }
-				}
-			}
-		}
+        }
+	}
+
+    post {
+        always {
+            bat 'docker stop mle-template && docker logout'
+        }
+    }
 }
