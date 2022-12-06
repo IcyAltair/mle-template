@@ -7,7 +7,6 @@ import traceback
 
 from logger import Logger
 
-TEST_SIZE = 0.2
 SHOW_LOG = True
 
 
@@ -18,13 +17,10 @@ class DataMaker():
         self.config = configparser.ConfigParser()
         self.log = logger.get_logger(__name__)
         self.project_path = os.path.join(os.getcwd(), "data")
-        self.data_path = os.path.join(self.project_path, "Iris.csv")
-        self.X_path = os.path.join(self.project_path, "Iris_X.csv")
-        self.y_path = os.path.join(self.project_path, "Iris_y.csv")
-        self.train_path = [os.path.join(self.project_path, "Train_Iris_X.csv"), os.path.join(
-            self.project_path, "Train_Iris_y.csv")]
-        self.test_path = [os.path.join(self.project_path, "Test_Iris_X.csv"), os.path.join(
-            self.project_path, "Test_Iris_y.csv")]
+        self.train_path = os.path.join(self.project_path, "fashion-mnist_train.csv")
+        self.test_path = os.path.join(self.project_path, "fashion-mnist_test.csv")
+        self.data_path = [os.path.join(self.train_path, 'fashion-mnist_train.csv'),
+                          os.path.join(self.test_path, 'fashion-mnist_test.csv')]
         self.log.info("DataMaker is ready")
 
     def get_data(self) -> bool:
@@ -42,8 +38,7 @@ class DataMaker():
             self.log.error("X and y data is not ready")
             return False
 
-    def split_data(self, test_size=TEST_SIZE) -> bool:
-        self.get_data()
+    def split_data(self):
         try:
             X = pd.read_csv(self.X_path, index_col=0)
             y = pd.read_csv(self.y_path, index_col=0)
