@@ -7,7 +7,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 import sys
@@ -36,8 +35,7 @@ class MultiModel():
         sc = StandardScaler()
         self.X_train = sc.fit_transform(self.X_train)
         self.X_test = sc.transform(self.X_test)
-        self.project_path = os.path.join(os.getcwd(), "experiments")
-        self.log_reg_path = os.path.join(self.project_path, "log_reg.sav")
+        self.project_path = os.path.join(os.getcwd(), "../experiments")
         self.rand_forest_path = os.path.join(
             self.project_path, "rand_forest.sav")
         self.knn_path = os.path.join(self.project_path, "knn.sav")
