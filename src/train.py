@@ -95,65 +95,6 @@ class MultiModel():
                   'path': self.knn_path}
         return self.save_model(classifier, self.knn_path, "KNN", params)
 
-    def svm(self, use_config: bool, kernel="linear", random_state=0, predict=False) -> bool:
-        if use_config:
-            try:
-                classifier = SVC(kernel=self.config["SVM"]["kernel"], random_state=self.config.getint(
-                    "SVC", "random_state"))
-            except KeyError:
-                self.log.error(traceback.format_exc())
-                self.log.warning(f'Using config:{use_config}, no params')
-                sys.exit(1)
-        else:
-            classifier = SVC(kernel=kernel, random_state=random_state)
-        try:
-            classifier.fit(self.X_train, self.y_train)
-        except Exception:
-            self.log.error(traceback.format_exc())
-            sys.exit(1)
-        if predict:
-            y_pred = classifier.predict(self.X_test)
-            print(accuracy_score(self.y_test, y_pred))
-        params = {'kernel': kernel,
-                  'random_state': random_state,
-                  'path': self.svm_path}
-        return self.save_model(classifier, self.svm_path, "SVM", params)
-
-    def gnb(self, predict=False) -> bool:
-        classifier = GaussianNB()
-        try:
-            classifier.fit(self.X_train, self.y_train)
-        except Exception:
-            self.log.error(traceback.format_exc())
-            sys.exit(1)
-        if predict:
-            y_pred = classifier.predict(self.X_test)
-            print(accuracy_score(self.y_test, y_pred))
-        params = {'path': self.gnb_path}
-        return self.save_model(classifier, self.gnb_path, "GNB", params)
-
-    def d_tree(self, use_config: bool, criterion="entropy", predict=False) -> bool:
-        if use_config:
-            try:
-                classifier = RandomForestClassifier(
-                    criterion=self.config["D_TREE"]["criterion"])
-            except KeyError:
-                self.log.error(traceback.format_exc())
-                self.log.warning(f'Using config:{use_config}, no params')
-                sys.exit(1)
-        else:
-            classifier = DecisionTreeClassifier(criterion=criterion)
-        try:
-            classifier.fit(self.X_train, self.y_train)
-        except Exception:
-            self.log.error(traceback.format_exc())
-            sys.exit(1)
-        if predict:
-            y_pred = classifier.predict(self.X_test)
-            print(accuracy_score(self.y_test, y_pred))
-        params = {'criterion': criterion,
-                  'path': self.d_tree_path}
-        return self.save_model(classifier, self.d_tree_path, "D_TREE", params)
 
     def save_model(self, classifier, path: str, name: str, params: dict) -> bool:
         self.config[name] = params
