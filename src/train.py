@@ -57,7 +57,7 @@ class MultiModel():
             classifier = RandomForestClassifier(
                 n_estimators=n_trees, criterion=criterion)
         try:
-            classifier.fit(self.X_train, self.y_train)
+            classifier.fit(self.X_train, self.y_train.values.ravel())
         except Exception:
             self.log.error(traceback.format_exc())
             sys.exit(1)
@@ -82,7 +82,7 @@ class MultiModel():
             classifier = KNeighborsClassifier(
                 n_neighbors=n_neighbors, metric=metric, p=p)
         try:
-            classifier.fit(self.X_train, self.y_train)
+            classifier.fit(self.X_train, self.y_train.values.ravel())
         except Exception:
             self.log.error(traceback.format_exc())
             sys.exit(1)
