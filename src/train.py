@@ -44,19 +44,6 @@ class MultiModel():
         self.d_tree_path = os.path.join(self.project_path, "d_tree.sav")
         self.log.info("MultiModel is ready")
 
-    def log_reg(self, predict=False) -> bool:
-        classifier = LogisticRegression()
-        try:
-            classifier.fit(self.X_train, self.y_train)
-        except Exception:
-            self.log.error(traceback.format_exc())
-            sys.exit(1)
-        if predict:
-            y_pred = classifier.predict(self.X_test)
-            print(accuracy_score(self.y_test, y_pred))
-        params = {'path': self.log_reg_path}
-        return self.save_model(classifier, self.log_reg_path, "LOG_REG", params)
-
     def rand_forest(self, use_config: bool, n_trees=100, criterion="entropy", predict=False) -> bool:
         if use_config:
             try:
