@@ -5,8 +5,10 @@ import pandas as pd
 import sys
 
 sys.path.insert(1, os.path.join(os.getcwd(), "src"))
+# sys.path.append("..")
 
-from preprocess import DataMaker
+from src.preprocess import DataMaker
+
 
 config = configparser.ConfigParser()
 config.read("config.ini")
@@ -25,7 +27,7 @@ class TestDataMaker(unittest.TestCase):
 
     def test_save_splitted_data(self):
         self.assertEqual(self.data_maker.save_splitted_data(pd.read_csv(
-            config["DATA"]["x_data"], index_col=0), config["DATA"]["x_data"]), True)
+            config["DATA"]["train_data"], index_col=0), config["DATA"]["train_data"]), True)
 
 
 if __name__ == "__main__":

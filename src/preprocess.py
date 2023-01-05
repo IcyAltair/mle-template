@@ -15,7 +15,7 @@ class DataMaker():
         logger = Logger(SHOW_LOG)
         self.config = configparser.ConfigParser()
         self.log = logger.get_logger(__name__)
-        self.project_path = os.path.join(os.getcwd(), "../data")
+        self.project_path = os.path.join(os.getcwd(), "data")
         self.train_path = os.path.join(self.project_path, "fashion-mnist_train.csv")
         self.test_path = os.path.join(self.project_path, "fashion-mnist_test.csv")
         self.X_train_path = os.path.join(self.project_path, "fashion_X_train.csv")
@@ -26,30 +26,31 @@ class DataMaker():
                           os.path.join(self.test_path, 'fashion-mnist_test.csv')]
         self.log.info("DataMaker is ready")
 
-    def get_data(self) -> tuple:
+    def get_data(self) -> bool:
 
-        test = pd.read_csv(self.test_path)
-        train = pd.read_csv(self.train_path)
 
         if os.path.isfile(self.test_path) and os.path.isfile(self.train_path):
-            self.log.info("data is ready")
+            self.log.info("test and train data is ready")
             self.config["DATA"] = {'train_data': self.train_path,
                                    'test_data': self.test_path}
-            return test, train
+            return os.path.isfile(self.test_path) and os.path.isfile(self.train_path)
         else:
             self.log.error("train and test data is not ready")
-            return ()
+            return False
+
 
     def split_data(self):
 
         try:
-            test, train = self.get_data()
+           self.get_data()
 
         except FileNotFoundError:
             self.log.error(traceback.format_exc())
             sys.exit(1)
 
 
+        test = pd.read_csv(self.test_path)
+        train = pd.read_csv(self.train_path)
         X_train = pd.DataFrame(train.iloc[:, 1:].values)
         y_train = pd.DataFrame(train.iloc[:, 0].values)
         X_test = pd.DataFrame(test.iloc[:, 1:].values)
@@ -72,7 +73,7 @@ class DataMaker():
 
         self.log.info("X_train, y_train and X_test, y_test data is ready")
 
-        with open('config.ini', 'w') as configfile:
+        with open('../config.ini', 'w') as configfile:
             self.config.write(configfile)
         return os.path.isfile(self.X_train_path) and\
             os.path.isfile(self.y_train_path) and\
