@@ -1,0 +1,4 @@
+outs:
+- md5: 68047a0ba8131122ff26127169ec8d9f
+  size: 22201654
+  path: fashion_X_test.csv

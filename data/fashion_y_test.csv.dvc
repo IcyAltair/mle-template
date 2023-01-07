@@ -1,0 +1,4 @@
+outs:
+- md5: ba15c134bc2e5dbede76fca5c37cd404
+  size: 68893
+  path: fashion_y_test.csv
