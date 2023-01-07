@@ -12,7 +12,7 @@ from sklearn.svm import SVC
 import sys
 import traceback
 
-from src.logger import Logger
+from logger import Logger
 
 SHOW_LOG = True
 
@@ -132,7 +132,7 @@ class MultiModel():
 
 if __name__ == "__main__":
     multi_model = MultiModel()
-    # multi_model.knn(use_config=False, predict=True)
-    multi_model.rand_forest(use_config=False, predict=True)
+    multi_model.knn(use_config=False, predict=True)
+    # multi_model.rand_forest(use_config=False, predict=True)
     # multi_model.gnb(use_config = False, predict=True)
 
