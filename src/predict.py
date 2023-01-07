@@ -32,8 +32,12 @@ class Predictor():
                                  required=True,
                                  default="LOG_REG",
                                  const="LOG_REG",
+        self.knn_path = self.config["KNN"]['path']
+       # self.rand_forest_path = self.config["RAND_FOREST"]['path']
+                                 default="KNN",
+                                 const="KNN",
                                  nargs="?",
-                                 choices=["LOG_REG", "RAND_FOREST", "KNN", "GNB", "SVM", "D_TREE"])
+                                 choices=["RAND_FOREST", "KNN"])
         self.parser.add_argument("-t",
                                  "--tests",
                                  type=str,
@@ -78,6 +82,7 @@ class Predictor():
             exp_path = os.path.join(os.getcwd(), "experiments")
             for test in os.listdir(tests_path):
                 with open(os.path.join(tests_path, test)) as f:
+                    # print(os.path.join(tests_path, test))
                     try:
                         data = json.load(f)
                         X = self.sc.transform(
