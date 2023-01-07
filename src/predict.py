@@ -25,15 +25,12 @@ class Predictor():
         self.log = logger.get_logger(__name__)
         self.config.read("config.ini")
         self.parser = argparse.ArgumentParser(description="Predictor")
+        self.knn_path = self.config["KNN"]['path']
         self.parser.add_argument("-m",
                                  "--model",
                                  type=str,
                                  help="Select model",
                                  required=True,
-                                 default="LOG_REG",
-                                 const="LOG_REG",
-        self.knn_path = self.config["KNN"]['path']
-       # self.rand_forest_path = self.config["RAND_FOREST"]['path']
                                  default="KNN",
                                  const="KNN",
                                  nargs="?",
