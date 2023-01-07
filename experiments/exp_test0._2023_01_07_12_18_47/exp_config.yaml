@@ -1,0 +1,10 @@
+model: KNN
+model params:
+  n_neighbors: '5'
+  metric: euclidean
+  p: '2'
+  path: /home/kittitereh/Desktop/mipt/MLE/mle-hw1/experiments/knn.sav
+tests: func
+score: '1.0'
+X_test path: /home/kittitereh/Desktop/mipt/MLE/mle-hw1/data/fashion_X_test.csv
+y_test path: /home/kittitereh/Desktop/mipt/MLE/mle-hw1/data/fashion_y_test.csv
