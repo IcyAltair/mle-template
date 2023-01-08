@@ -4,6 +4,7 @@ ENV PYTHON UNBUFFERED 1
 
 WORKDIR /app
 
-ADD . /app
+COPY . .
 
 RUN pip install -r requirements.txt
+
