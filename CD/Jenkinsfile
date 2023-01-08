@@ -16,7 +16,7 @@ options {
 
         stage('Login'){
             steps{
-                //withCredentials([usernamePassword(credentialsId: 'mle-template', passwordVariable: 'DOCKER_REGISTRY_PWD', usernameVariable: 'DOCKER_REGISTRY_USER')]){
+                //withCredentials([usernamePassword(credentialsId: 'mle-hw1', passwordVariable: 'DOCKER_REGISTRY_PWD', usernameVariable: 'DOCKER_REGISTRY_USER')]){
                 //bat 'chcp 65001 && echo %DOCKER_REGISTRY_PWD% | docker login -u %DOCKER_REGISTRY_USER% --password-stdin'}
                 //bat 'chcp 65001 && echo %DOCKERHUB_CREDS_PSW% | docker login -u %DOCKERHUB_CREDS_USR% --password-stdin'
                 bat 'docker login -u %DOCKERHUB_CREDS_USR% -p %DOCKERHUB_CREDS_PSW%'
@@ -26,7 +26,7 @@ options {
         stage('Pull image'){
             steps{
                 bat '''
-                        docker pull altairzero/mle-template:latest
+                        docker pull kittitereh/mle-hw1:latest
                 '''
             }
         }
@@ -34,7 +34,7 @@ options {
         stage('Run container'){
             steps{
                 bat '''
-                        docker run --name mle-template -p 80:5556 -d altairzero/mle-template:latest
+                        docker run --name mle-hw1 -p 80:5556 -d kittitereh/mle-hw1:latest
                 '''
             }
         }
@@ -42,7 +42,7 @@ options {
 
     post {
         always {
-            bat 'docker stop mle-template && docker logout'
+            bat 'docker stop mle-hw1 && docker logout'
         }
     }
 }
