@@ -17,7 +17,7 @@ options {
         stage('Clone github repository') {
             steps {
                 cleanWs()
-                sh 'git clone -b  https://github.com/kittitereh/mle-hw1.git'
+                sh 'git clone -b main https://github.com/kittitereh/mle-hw1.git'
 				}
 			}
 
