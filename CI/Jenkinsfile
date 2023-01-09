@@ -1,12 +1,12 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKERHUB_CREDS=credentials('mle-template')
-        LC_ALL = "en_US.UTF-8"
-        LANG    = "en_US.UTF-8"
-        LANGUAGE = "en_US.UTF-8"
-    }
+    // environment {
+    //     DOCKERHUB_CREDS=credentials('mle-template')
+    //     LC_ALL = "en_US.UTF-8"
+    //     LANG    = "en_US.UTF-8"
+    //     LANGUAGE = "en_US.UTF-8"
+    // }
 
 options {
         timestamps()
@@ -17,7 +17,7 @@ options {
         stage('Clone github repository') {
             steps {
                 cleanWs()
-                sh 'chcp 65001 && git clone -b  https://github.com/kittitereh/mle-hw1.git'
+                sh 'git clone -b  https://github.com/kittitereh/mle-hw1.git'
 				}
 			}
 
