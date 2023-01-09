@@ -41,12 +41,11 @@ options {
             steps {
                 script {
                     try {
-                        sh 'chcp 65001 && cd mle-hw1 && docker-compose build'
+                        sh 'cd mle-hw1 && docker-compose build'
                         }
 
                     finally {
                     sh '''
-                        chcp 65001
                         cd mle-hw1
                         docker-compose up -d
                         '''
@@ -90,14 +89,14 @@ options {
 
         stage('Push'){
             steps{
-                sh 'chcp 65001 && docker push kittitereh/mle-hw1:latest'
+                sh 'docker push kittitereh/mle-hw1:latest'
             }
         }
 	}
 
     post {
         always {
-            sh 'chcp 65001 && docker logout'
+            sh 'docker logout'
         }
     }
 }
