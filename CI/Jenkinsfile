@@ -21,11 +21,25 @@ options {
 				}
 			}
 
-    //     stage('Checkout repo dir') {
-    //         steps {
-    //             sh 'chcp 65001 && cd mle-hw1 && dir'
-	// 			}
-	// 		}
+        // stage('Checkout repo dir') {
+        //     steps {
+        //         sh 'chcp 65001 && cd mle-hw1 && dir'
+		// 		}
+		// 	}
+
+        stage('Create and run docker image'){
+            steps {
+                script {
+                    try {
+                        sh 'docker-compose build'
+                    }
+                    finally{
+                        sh 'docker-compose up -d'
+                    }
+                }
+            }
+        }
+
 
     //     stage('Login'){
     //         steps{
