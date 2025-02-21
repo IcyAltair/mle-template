@@ -3,9 +3,6 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDS=credentials('mle-template')
-        LC_ALL = "en_US.UTF-8"
-        LANG    = "en_US.UTF-8"
-        LANGUAGE = "en_US.UTF-8"
     }
 
 options {
@@ -13,19 +10,15 @@ options {
         skipDefaultCheckout(true)
 	}
     stages {
-
         stage('Login'){
             steps{
-                //withCredentials([usernamePassword(credentialsId: 'mle-template', passwordVariable: 'DOCKER_REGISTRY_PWD', usernameVariable: 'DOCKER_REGISTRY_USER')]){
-                //bat 'chcp 65001 && echo %DOCKER_REGISTRY_PWD% | docker login -u %DOCKER_REGISTRY_USER% --password-stdin'}
-                //bat 'chcp 65001 && echo %DOCKERHUB_CREDS_PSW% | docker login -u %DOCKERHUB_CREDS_USR% --password-stdin'
-                bat 'docker login -u %DOCKERHUB_CREDS_USR% -p %DOCKERHUB_CREDS_PSW%'
+                    sh 'docker login -u %DOCKERHUB_CREDS_USR% -p %DOCKERHUB_CREDS_PSW%'
                 }
             }
 
         stage('Pull image'){
             steps{
-                bat '''
+                sh '''
                         docker pull altairzero/mle-template:latest
                 '''
             }
@@ -33,7 +26,7 @@ options {
 
         stage('Run container'){
             steps{
-                bat '''
+                sh '''
                         docker run --name mle-template -p 80:5556 -d altairzero/mle-template:latest
                 '''
             }
@@ -42,7 +35,8 @@ options {
 
     post {
         always {
-            bat 'docker stop mle-template && docker logout'
+            sh 'docker stop mle-template && docker logout'
+            cleanWs()
         }
     }
 }

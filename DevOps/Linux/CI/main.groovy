@@ -12,15 +12,15 @@ options {
     stages {
         stage('Checkout repo dir') {
             steps {
-                sh 'git clone -b feature/api-call https://github.com/IcyAltair/mle-template.git'
-                sh 'cd mle-template && ls -lash'
-                sh 'whoami'
+                    sh 'git clone -b feature/api-call https://github.com/IcyAltair/mle-template.git'
+                    sh 'cd mle-template && ls -lash'
+                    sh 'whoami'
 				}
 			}
 
         stage('Login'){
             steps{
-                sh "docker login -u ${DOCKERHUB_CREDS_USR} -p ${DOCKERHUB_CREDS_PSW}"
+                    sh "docker login -u ${DOCKERHUB_CREDS_USR} -p ${DOCKERHUB_CREDS_PSW}"
                 }
             }
 
@@ -28,11 +28,11 @@ options {
             steps {
                 script {
                     try {
-                        sh 'cd mle-template && docker compose build'
+                            sh 'cd mle-template && docker compose build'
                         }
 
                     finally {
-                        sh 'cd mle-template && docker compose up -d'
+                            sh 'cd mle-template && docker compose up -d'
                         }
 				    }
                 }
@@ -63,24 +63,24 @@ options {
         stage('Checkout coverage report'){
             steps{
                 dir("mle-template"){
-                    sh '''
-                    docker compose logs -t --tail 10
-                    '''
+                        sh '''
+                        docker compose logs -t --tail 10
+                        '''
                 }
             }
         }
 
         stage('Push'){
             steps{
-                sh 'docker push altairzero/mle-template:latest'
+                    sh 'docker push altairzero/mle-template:latest'
             }
         }
 	}
 
     post {
         always {
-            sh 'docker logout'
-            cleanWs()
+                sh 'docker logout'
+                cleanWs()
         }
     }
 }
