@@ -12,6 +12,7 @@ options {
     stages {
         stage('Checkout repo dir') {
             steps {
+                sh 'pwd'
                 sh 'ls -lash'
 				}
 			}
