@@ -3,9 +3,6 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDS=credentials('mle-template')
-        LC_ALL = "en_US.UTF-8"
-        LANG    = "en_US.UTF-8"
-        LANGUAGE = "en_US.UTF-8"
     }
 
 options {
@@ -13,25 +10,15 @@ options {
         skipDefaultCheckout(true)
 	}
     stages {
-        stage('Clone github repository') {
-            steps {
-                cleanWs()
-                bat 'chcp 65001 && git clone -b main https://github.com/IcyAltair/mle-template.git'
-				}
-			}
-
         stage('Checkout repo dir') {
             steps {
-                bat 'chcp 65001 && cd mle-template && dir'
+                sh 'ls -lash'
 				}
 			}
 
         stage('Login'){
             steps{
-                //withCredentials([usernamePassword(credentialsId: 'mle-template', passwordVariable: 'DOCKER_REGISTRY_PWD', usernameVariable: 'DOCKER_REGISTRY_USER')]){
-                //bat 'chcp 65001 && echo %DOCKER_REGISTRY_PWD% | docker login -u %DOCKER_REGISTRY_USER% --password-stdin'}
-                //bat 'chcp 65001 && echo %DOCKERHUB_CREDS_PSW% | docker login -u %DOCKERHUB_CREDS_USR% --password-stdin'
-                bat 'chcp 65001 && docker login -u %DOCKERHUB_CREDS_USR% -p %DOCKERHUB_CREDS_PSW%'
+                sh "docker login -u ${DOCKERHUB_CREDS_USR} -p ${DOCKERHUB_CREDS_PSW}"
                 }
             }
 
@@ -39,15 +26,11 @@ options {
             steps {
                 script {
                     try {
-                        bat 'chcp 65001 && cd mle-template && docker-compose build'
+                        sh 'docker-compose build'
                         }
 
                     finally {
-                    bat '''
-                        chcp 65001
-                        cd mle-template
-                        docker-compose up -d
-                        '''
+                        sh'docker-compose up -d'
                         }
 				    }
                 }
