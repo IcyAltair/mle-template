@@ -27,7 +27,7 @@ options {
         stage('Run container'){
             steps{
                 sh '''
-                        docker run --name mle-template -p 80:5556 -d altairzero/mle-template:latest
+                        docker run --name mle-template-test -p 80:5556 -d altairzero/mle-template:latest
                 '''
             }
         }
@@ -35,7 +35,7 @@ options {
 
     post {
         always {
-            sh 'docker stop mle-template && docker logout'
+            sh 'docker stop mle-template-test && docker logout'
             cleanWs()
         }
     }
