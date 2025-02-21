@@ -14,6 +14,7 @@ options {
             steps {
                 sh 'git clone -b feature/api-call https://github.com/IcyAltair/mle-template.git'
                 sh 'cd mle-template && ls -lash'
+                sh 'whoami'
 				}
 			}
 
