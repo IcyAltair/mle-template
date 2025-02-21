@@ -13,7 +13,7 @@ options {
         stage('Checkout repo dir') {
             steps {
                 sh 'git clone -b feature/api-call https://github.com/IcyAltair/mle-template.git'
-                sh 'ls -lash'
+                sh 'cd mle-template && ls -lash'
 				}
 			}
 
@@ -27,11 +27,11 @@ options {
             steps {
                 script {
                     try {
-                        sh 'cd mle-template && docker-compose build'
+                        sh 'cd mle-template && docker compose build'
                         }
 
                     finally {
-                        sh 'cd mle-template && docker-compose up -d'
+                        sh 'cd mle-template && docker compose up -d'
                         }
 				    }
                 }
@@ -45,8 +45,8 @@ options {
         stage('Checkout container logs') {
             steps {
                 dir("mle-template") {
-                        bat '''
-                            docker-compose up -d
+                        sh '''
+                            docker compose up -d
                             for /f %%i in ('docker ps -qf "name=^mle-template-web-1"') do set containerId=%%i
                             echo %containerId%
                             IF "%containerId%" == "" (
@@ -63,8 +63,8 @@ options {
         stage('Checkout coverage report'){
             steps{
                 dir("mle-template"){
-                    bat '''
-                    docker-compose logs -t --tail 10
+                    sh '''
+                    docker compose logs -t --tail 10
                     '''
                 }
             }
@@ -72,14 +72,15 @@ options {
 
         stage('Push'){
             steps{
-                bat 'chcp 65001 && docker push altairzero/mle-template:latest'
+                sh 'docker push altairzero/mle-template:latest'
             }
         }
 	}
 
     post {
         always {
-            bat 'chcp 65001 && docker logout'
+            sh 'docker logout'
+            cleanWs()
         }
     }
 }
