@@ -48,14 +48,13 @@ options {
                 dir("mle-template") {
                         sh '''
                             docker compose up -d
-                            for /f %%i in ('docker ps -qf "name=^mle-template-web-1"') do set containerId=%%i
-                            echo %containerId%
-                            IF "%containerId%" == "" (
+                            containerId=$(docker ps -qf "name=^mle-template-web-1")
+                            if [[ -z "$containerId" ]]; then
                                 echo "No container running"
-                            )
-                            ELSE (
-                                docker logs --tail 1000 -f %containerId%
-                                )
+                            else
+                                
+                                docker logs --tail 1000 -f "$containerId"
+                            fi
                         '''
                     }
             }
