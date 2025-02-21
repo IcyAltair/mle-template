@@ -12,7 +12,7 @@ options {
     stages {
         stage('Checkout repo dir') {
             steps {
-                sh 'pwd'
+                sh 'git clone -b feature/api-call https://github.com/IcyAltair/mle-template.git'
                 sh 'ls -lash'
 				}
 			}
@@ -27,11 +27,11 @@ options {
             steps {
                 script {
                     try {
-                        sh 'docker-compose build'
+                        sh 'cd mle-template && docker-compose build'
                         }
 
                     finally {
-                        sh'docker-compose up -d'
+                        sh 'cd mle-template && docker-compose up -d'
                         }
 				    }
                 }
