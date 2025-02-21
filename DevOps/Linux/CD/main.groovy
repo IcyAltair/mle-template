@@ -12,7 +12,7 @@ options {
     stages {
         stage('Login'){
             steps{
-                    sh 'docker login -u %DOCKERHUB_CREDS_USR% -p %DOCKERHUB_CREDS_PSW%'
+                    sh "docker login -u ${DOCKERHUB_CREDS_USR} -p ${DOCKERHUB_CREDS_PSW}"
                 }
             }
 
