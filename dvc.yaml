@@ -1,0 +1,21 @@
+stages:
+  preprocess:
+    cmd: python -m src.preprocess --config config.ini
+    deps:
+      - src/preprocess.py
+      - src/utils.py
+      - data/raw
+      - config.ini
+    outs:
+      - data/processed
+
+  train:
+    cmd: python -m src.train --config config.ini
+    deps:
+      - src/train.py
+      - src/utils.py
+      - data/processed
+      - config.ini
+    outs:
+      - artifacts/model.joblib
+      - artifacts/metrics.json

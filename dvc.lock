@@ -1,0 +1,57 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python -m src.preprocess --config config.ini
+    deps:
+    - path: config.ini
+      hash: md5
+      md5: 20992a94c861a83b55a90cd1fc77ab27
+      size: 314
+    - path: data/raw
+      hash: md5
+      md5: 0d8aef4632c6779b1da289bc8a7bdcdd.dir
+      size: 155223884
+      nfiles: 2
+    - path: src/preprocess.py
+      hash: md5
+      md5: cdc17274b1b85bc29c2a19b1ded5ffb7
+      size: 2193
+    - path: src/utils.py
+      hash: md5
+      md5: 5833ea4af530aabe5e381fb2bb3d1db1
+      size: 438
+    outs:
+    - path: data/processed
+      hash: md5
+      md5: 310193061026ff012c7a0d10738ec5df.dir
+      size: 46457035
+      nfiles: 3
+  train:
+    cmd: python -m src.train --config config.ini
+    deps:
+    - path: config.ini
+      hash: md5
+      md5: 20992a94c861a83b55a90cd1fc77ab27
+      size: 314
+    - path: data/processed
+      hash: md5
+      md5: 310193061026ff012c7a0d10738ec5df.dir
+      size: 46457035
+      nfiles: 3
+    - path: src/train.py
+      hash: md5
+      md5: 61fbb8b4daa0d87628bc5d6b6362b094
+      size: 1865
+    - path: src/utils.py
+      hash: md5
+      md5: 5833ea4af530aabe5e381fb2bb3d1db1
+      size: 438
+    outs:
+    - path: artifacts/metrics.json
+      hash: md5
+      md5: 76f2ee958ac7e2d594e69614090db4e5
+      size: 189
+    - path: artifacts/model.joblib
+      hash: md5
+      md5: 89e83fb1dcbb0148d483b3ffd83a7444
+      size: 63719
