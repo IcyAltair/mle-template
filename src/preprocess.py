@@ -39,12 +39,17 @@ def main(config_path: str) -> None:
         X_train_full = X_train_full / 255.0
         X_test = X_test / 255.0
 
+    stratify = y_train_full
+    unique, counts = np.unique(y_train_full, return_counts=True)
+    if np.min(counts) < 2:
+        stratify = None
+
     X_train, X_val, y_train, y_val = train_test_split(
         X_train_full,
         y_train_full,
         test_size=val_size,
         random_state=random_state,
-        stratify=y_train_full,
+        stratify=stratify,
     )
 
     np.savez_compressed(out_dir / "train.npz", X=X_train, y=y_train)
