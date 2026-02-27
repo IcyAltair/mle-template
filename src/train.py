@@ -1,192 +1,68 @@
-import configparser
-import os
-import pandas as pd
-import pickle
-from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.neighbors import KNeighborsClassifier
+import argparse
+import json
+from pathlib import Path
+
+import joblib
+import numpy as np
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
-import sys
-import traceback
+from sklearn.metrics import accuracy_score, f1_score
 
-from logger import Logger
-
-SHOW_LOG = True
+from src.utils import read_config, ensure_dir
 
 
-class MultiModel():
+def load_npz(path: Path) -> tuple[np.ndarray, np.ndarray]:
+    data = np.load(path)
+    return data["X"], data["y"]
 
-    def __init__(self) -> None:
-        logger = Logger(SHOW_LOG)
-        self.config = configparser.ConfigParser()
-        self.log = logger.get_logger(__name__)
-        self.config.read("config.ini")
-        self.X_train = pd.read_csv(
-            self.config["SPLIT_DATA"]["X_train"], index_col=0)
-        self.y_train = pd.read_csv(
-            self.config["SPLIT_DATA"]["y_train"], index_col=0)
-        self.X_test = pd.read_csv(
-            self.config["SPLIT_DATA"]["X_test"], index_col=0)
-        self.y_test = pd.read_csv(
-            self.config["SPLIT_DATA"]["y_test"], index_col=0)
-        sc = StandardScaler()
-        self.X_train = sc.fit_transform(self.X_train)
-        self.X_test = sc.transform(self.X_test)
-        self.project_path = os.path.join(os.getcwd(), "experiments")
-        self.log_reg_path = os.path.join(self.project_path, "log_reg.sav")
-        self.rand_forest_path = os.path.join(
-            self.project_path, "rand_forest.sav")
-        self.knn_path = os.path.join(self.project_path, "knn.sav")
-        self.svm_path = os.path.join(self.project_path, "svm.sav")
-        self.gnb_path = os.path.join(self.project_path, "gnb.sav")
-        self.d_tree_path = os.path.join(self.project_path, "d_tree.sav")
-        self.log.info("MultiModel is ready")
 
-    def log_reg(self, predict=False) -> bool:
-        classifier = LogisticRegression()
-        try:
-            classifier.fit(self.X_train, self.y_train)
-        except Exception:
-            self.log.error(traceback.format_exc())
-            sys.exit(1)
-        if predict:
-            y_pred = classifier.predict(self.X_test)
-            print(accuracy_score(self.y_test, y_pred))
-        params = {'path': self.log_reg_path}
-        return self.save_model(classifier, self.log_reg_path, "LOG_REG", params)
+def main(config_path: str) -> None:
+    cfg = read_config(config_path)
 
-    def rand_forest(self, use_config: bool, n_trees=100, criterion="entropy", predict=False) -> bool:
-        if use_config:
-            try:
-                classifier = RandomForestClassifier(
-                    n_estimators=self.config.getint("RAND_FOREST", "n_estimators"), criterion=self.config["RAND_FOREST"]["criterion"])
-            except KeyError:
-                self.log.error(traceback.format_exc())
-                self.log.warning(f'Using config:{use_config}, no params')
-                sys.exit(1)
-        else:
-            classifier = RandomForestClassifier(
-                n_estimators=n_trees, criterion=criterion)
-        try:
-            classifier.fit(self.X_train, self.y_train)
-        except Exception:
-            self.log.error(traceback.format_exc())
-            sys.exit(1)
-        if predict:
-            y_pred = classifier.predict(self.X_test)
-            print(accuracy_score(self.y_test, y_pred))
-        params = {'n_estimators': n_trees,
-                  'criterion': criterion,
-                  'path': self.rand_forest_path}
-        return self.save_model(classifier, self.rand_forest_path, "RAND_FOREST", params)
+    train_path = Path("data/processed/train.npz")
+    val_path = Path("data/processed/val.npz")
 
-    def knn(self, use_config: bool, n_neighbors=5, metric="minkowski", p=2, predict=False) -> bool:
-        if use_config:
-            try:
-                classifier = KNeighborsClassifier(n_neighbors=self.config.getint(
-                    "KNN", "n_neighbors"), metric=self.config["KNN"]["metric"], p=self.config.getint("KNN", "p"))
-            except KeyError:
-                self.log.error(traceback.format_exc())
-                self.log.warning(f'Using config:{use_config}, no params')
-                sys.exit(1)
-        else:
-            classifier = KNeighborsClassifier(
-                n_neighbors=n_neighbors, metric=metric, p=p)
-        try:
-            classifier.fit(self.X_train, self.y_train)
-        except Exception:
-            self.log.error(traceback.format_exc())
-            sys.exit(1)
-        if predict:
-            y_pred = classifier.predict(self.X_test)
-            print(accuracy_score(self.y_test, y_pred))
-        params = {'n_neighbors': n_neighbors,
-                  'metric': metric,
-                  'p': p,
-                  'path': self.knn_path}
-        return self.save_model(classifier, self.knn_path, "KNN", params)
+    X_train, y_train = load_npz(train_path)
+    X_val, y_val = load_npz(val_path)
 
-    def svm(self, use_config: bool, kernel="linear", random_state=0, predict=False) -> bool:
-        if use_config:
-            try:
-                classifier = SVC(kernel=self.config["SVM"]["kernel"], random_state=self.config.getint(
-                    "SVC", "random_state"))
-            except KeyError:
-                self.log.error(traceback.format_exc())
-                self.log.warning(f'Using config:{use_config}, no params')
-                sys.exit(1)
-        else:
-            classifier = SVC(kernel=kernel, random_state=random_state)
-        try:
-            classifier.fit(self.X_train, self.y_train)
-        except Exception:
-            self.log.error(traceback.format_exc())
-            sys.exit(1)
-        if predict:
-            y_pred = classifier.predict(self.X_test)
-            print(accuracy_score(self.y_test, y_pred))
-        params = {'kernel': kernel,
-                  'random_state': random_state,
-                  'path': self.svm_path}
-        return self.save_model(classifier, self.svm_path, "SVM", params)
+    C = float(cfg["LOGREG"].get("C", 1.0))
+    max_iter = int(cfg["LOGREG"].get("max_iter", 200))
+    n_jobs = int(cfg["LOGREG"].get("n_jobs", -1))
 
-    def gnb(self, predict=False) -> bool:
-        classifier = GaussianNB()
-        try:
-            classifier.fit(self.X_train, self.y_train)
-        except Exception:
-            self.log.error(traceback.format_exc())
-            sys.exit(1)
-        if predict:
-            y_pred = classifier.predict(self.X_test)
-            print(accuracy_score(self.y_test, y_pred))
-        params = {'path': self.gnb_path}
-        return self.save_model(classifier, self.gnb_path, "GNB", params)
+    model = LogisticRegression(
+        C=C,
+        max_iter=max_iter,
+        n_jobs=n_jobs,
+        multi_class="multinomial",
+        solver="lbfgs",
+    )
 
-    def d_tree(self, use_config: bool, criterion="entropy", predict=False) -> bool:
-        if use_config:
-            try:
-                classifier = RandomForestClassifier(
-                    criterion=self.config["D_TREE"]["criterion"])
-            except KeyError:
-                self.log.error(traceback.format_exc())
-                self.log.warning(f'Using config:{use_config}, no params')
-                sys.exit(1)
-        else:
-            classifier = DecisionTreeClassifier(criterion=criterion)
-        try:
-            classifier.fit(self.X_train, self.y_train)
-        except Exception:
-            self.log.error(traceback.format_exc())
-            sys.exit(1)
-        if predict:
-            y_pred = classifier.predict(self.X_test)
-            print(accuracy_score(self.y_test, y_pred))
-        params = {'criterion': criterion,
-                  'path': self.d_tree_path}
-        return self.save_model(classifier, self.d_tree_path, "D_TREE", params)
+    model.fit(X_train, y_train)
 
-    def save_model(self, classifier, path: str, name: str, params: dict) -> bool:
-        self.config[name] = params
-        os.remove('config.ini')
-        with open('config.ini', 'w') as configfile:
-            self.config.write(configfile)
-        with open(path, 'wb') as f:
-            pickle.dump(classifier, f)
+    val_pred = model.predict(X_val)
+    val_acc = float(accuracy_score(y_val, val_pred))
+    val_f1m = float(f1_score(y_val, val_pred, average="macro"))
 
-        self.log.info(f'{path} is saved')
-        return os.path.isfile(path)
+    model_path = Path(cfg["ARTIFACTS"]["model_path"])
+    metrics_path = Path(cfg["ARTIFACTS"]["metrics_path"])
+    ensure_dir(model_path.parent)
+
+    joblib.dump(model, model_path)
+
+    metrics = {
+        "val_accuracy": val_acc,
+        "val_f1_macro": val_f1m,
+        "model": "LogisticRegression(multinomial, lbfgs)",
+        "params": {"C": C, "max_iter": max_iter, "n_jobs": n_jobs},
+    }
+    metrics_path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
+
+    print(f"Saved model:   {model_path}")
+    print(f"Saved metrics: {metrics_path}")
+    print(f"VAL accuracy={val_acc:.4f}, f1_macro={val_f1m:.4f}")
 
 
 if __name__ == "__main__":
-    multi_model = MultiModel()
-    multi_model.log_reg(predict=True)
-    multi_model.rand_forest(use_config=False, predict=True)
-    multi_model.knn(use_config=False, predict=True)
-    multi_model.svm(use_config=False, predict=True)
-    multi_model.gnb(predict=True)
-    multi_model.d_tree(use_config=False, predict=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", default="config.ini")
+    args = parser.parse_args()
+    main(args.config)
