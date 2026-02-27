@@ -1,7 +1,7 @@
 from pathlib import Path
 import numpy as np
 
-from src.preprocess import main as preprocess_main
+from ..preprocess import main as preprocess_main
 
 
 def test_preprocess_outputs_exist(tmp_path, monkeypatch):

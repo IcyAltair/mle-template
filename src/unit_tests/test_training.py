@@ -1,7 +1,7 @@
 from pathlib import Path
 import numpy as np
 
-from src.train import main as train_main
+from ..train import main as train_main
 
 
 def test_train_saves_model_and_metrics(tmp_path, monkeypatch):
@@ -19,7 +19,7 @@ def test_train_saves_model_and_metrics(tmp_path, monkeypatch):
         """
             [LOGREG]
             C = 1.0
-            max_iter = 50
+            max_iter = 200
             n_jobs = -1
             
             [ARTIFACTS]
