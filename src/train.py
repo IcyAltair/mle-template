@@ -32,7 +32,6 @@ def main(config_path: str) -> None:
         C=C,
         max_iter=max_iter,
         n_jobs=n_jobs,
-        multi_class="multinomial",
         solver="lbfgs",
     )
 
@@ -51,7 +50,7 @@ def main(config_path: str) -> None:
     metrics = {
         "val_accuracy": val_acc,
         "val_f1_macro": val_f1m,
-        "model": "LogisticRegression(multinomial, lbfgs)",
+        "model": "LogisticRegression(lbfgs)",
         "params": {"C": C, "max_iter": max_iter, "n_jobs": n_jobs},
     }
     metrics_path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
