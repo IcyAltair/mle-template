@@ -1,0 +1,17 @@
+{
+  "checks": [
+    {
+      "name": "health",
+      "method": "GET",
+      "url": "http://localhost:8000/health",
+      "expect_status": 200
+    },
+    {
+      "name": "predict_fill",
+      "method": "POST",
+      "url": "http://localhost:8000/predict",
+      "json": { "fill": 0 },
+      "expect_status": 200
+    }
+  ]
+}
