@@ -1,80 +1,64 @@
-import configparser
-import os
+import argparse
+from pathlib import Path
+
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-import sys
-import traceback
 
-from logger import Logger
-
-TEST_SIZE = 0.2
-SHOW_LOG = True
+from src.utils import read_config, ensure_dir
 
 
-class DataMaker():
+def load_fashion_csv(csv_path: Path) -> tuple[np.ndarray, np.ndarray]:
+    df = pd.read_csv(csv_path)
+    if "label" not in df.columns:
+        raise ValueError("Expected 'label' column in CSV")
+    y = df["label"].to_numpy(dtype=np.int64)
+    X = df.drop(columns=["label"]).to_numpy(dtype=np.float32)
+    if X.shape[1] != 784:
+        raise ValueError(f"Expected 784 pixel columns, got {X.shape[1]}")
+    return X, y
 
-    def __init__(self) -> None:
-        logger = Logger(SHOW_LOG)
-        self.config = configparser.ConfigParser()
-        self.log = logger.get_logger(__name__)
-        self.project_path = os.path.join(os.getcwd(), "data")
-        self.data_path = os.path.join(self.project_path, "Iris.csv")
-        self.X_path = os.path.join(self.project_path, "Iris_X.csv")
-        self.y_path = os.path.join(self.project_path, "Iris_y.csv")
-        self.train_path = [os.path.join(self.project_path, "Train_Iris_X.csv"), os.path.join(
-            self.project_path, "Train_Iris_y.csv")]
-        self.test_path = [os.path.join(self.project_path, "Test_Iris_X.csv"), os.path.join(
-            self.project_path, "Test_Iris_y.csv")]
-        self.log.info("DataMaker is ready")
 
-    def get_data(self) -> bool:
-        dataset = pd.read_csv(self.data_path)
-        X = pd.DataFrame(dataset.iloc[:, 1:5].values)
-        y = pd.DataFrame(dataset.iloc[:, 5:].values)
-        X.to_csv(self.X_path, index=True)
-        y.to_csv(self.y_path, index=True)
-        if os.path.isfile(self.X_path) and os.path.isfile(self.y_path):
-            self.log.info("X and y data is ready")
-            self.config["DATA"] = {'X_data': self.X_path,
-                                   'y_data': self.y_path}
-            return os.path.isfile(self.X_path) and os.path.isfile(self.y_path)
-        else:
-            self.log.error("X and y data is not ready")
-            return False
+def main(config_path: str) -> None:
+    cfg = read_config(config_path)
 
-    def split_data(self, test_size=TEST_SIZE) -> bool:
-        self.get_data()
-        try:
-            X = pd.read_csv(self.X_path, index_col=0)
-            y = pd.read_csv(self.y_path, index_col=0)
-        except FileNotFoundError:
-            self.log.error(traceback.format_exc())
-            sys.exit(1)
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=0)
-        self.save_splitted_data(X_train, self.train_path[0])
-        self.save_splitted_data(y_train, self.train_path[1])
-        self.save_splitted_data(X_test, self.test_path[0])
-        self.save_splitted_data(y_test, self.test_path[1])
-        self.config["SPLIT_DATA"] = {'X_train': self.train_path[0],
-                                     'y_train': self.train_path[1],
-                                     'X_test': self.test_path[0],
-                                     'y_test': self.test_path[1]}
-        self.log.info("Train and test data is ready")
-        with open('config.ini', 'w') as configfile:
-            self.config.write(configfile)
-        return os.path.isfile(self.train_path[0]) and\
-            os.path.isfile(self.train_path[1]) and\
-            os.path.isfile(self.test_path[0]) and \
-            os.path.isfile(self.test_path[1])
+    raw_train = Path(cfg["DATA"]["raw_train"])
+    raw_test = Path(cfg["DATA"]["raw_test"])
 
-    def save_splitted_data(self, df: pd.DataFrame, path: str) -> bool:
-        df = df.reset_index(drop=True)
-        df.to_csv(path, index=True)
-        self.log.info(f'{path} is saved')
-        return os.path.isfile(path)
+    val_size = float(cfg["PREPROCESS"].get("val_size", 0.1))
+    random_state = int(cfg["PREPROCESS"].get("random_state", 42))
+    normalize = cfg["PREPROCESS"].getboolean("normalize", True)
+
+    out_dir = Path("data/processed")
+    ensure_dir(out_dir)
+
+    X_train_full, y_train_full = load_fashion_csv(raw_train)
+    X_test, y_test = load_fashion_csv(raw_test)
+
+    if normalize:
+        X_train_full = X_train_full / 255.0
+        X_test = X_test / 255.0
+
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_train_full,
+        y_train_full,
+        test_size=val_size,
+        random_state=random_state,
+        stratify=y_train_full,
+    )
+
+    np.savez_compressed(out_dir / "train.npz", X=X_train, y=y_train)
+    np.savez_compressed(out_dir / "val.npz", X=X_val, y=y_val)
+    np.savez_compressed(out_dir / "test.npz", X=X_test, y=y_test)
+
+    print("Saved:")
+    print(f"- {out_dir / 'train.npz'}: X={X_train.shape}, y={y_train.shape}")
+    print(f"- {out_dir / 'val.npz'}:   X={X_val.shape}, y={y_val.shape}")
+    print(f"- {out_dir / 'test.npz'}:  X={X_test.shape}, y={y_test.shape}")
 
 
 if __name__ == "__main__":
-    data_maker = DataMaker()
-    data_maker.split_data()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", default="config.ini")
+    args = parser.parse_args()
+    main(args.config)
