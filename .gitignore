@@ -129,4 +129,10 @@ dmypy.json
 .pyre/
 
 # Place data for non local DVC
-# /data 
+/data
+
+# idea files
+*.idea
+
+# mac os file
+*.DS_Store
