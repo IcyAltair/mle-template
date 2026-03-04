@@ -1,0 +1,127 @@
+{
+  "source_dir": "/Users/artemij/megashool/techonology-of-processing-big-data/data/dogs-vs-cats/train",
+  "count": 30,
+  "seed": 42,
+  "items": [
+    {
+      "image": "images/cat.6428.jpg",
+      "label": "cat"
+    },
+    {
+      "image": "images/cat.411.jpg",
+      "label": "cat"
+    },
+    {
+      "image": "images/cat.12182.jpg",
+      "label": "cat"
+    },
+    {
+      "image": "images/dog.6179.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/cat.3856.jpg",
+      "label": "cat"
+    },
+    {
+      "image": "images/cat.3116.jpg",
+      "label": "cat"
+    },
+    {
+      "image": "images/cat.9217.jpg",
+      "label": "cat"
+    },
+    {
+      "image": "images/cat.8232.jpg",
+      "label": "cat"
+    },
+    {
+      "image": "images/cat.7724.jpg",
+      "label": "cat"
+    },
+    {
+      "image": "images/cat.4637.jpg",
+      "label": "cat"
+    },
+    {
+      "image": "images/dog.11441.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/dog.11912.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/dog.120.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/cat.9465.jpg",
+      "label": "cat"
+    },
+    {
+      "image": "images/dog.5460.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/dog.10707.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/dog.9050.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/cat.7073.jpg",
+      "label": "cat"
+    },
+    {
+      "image": "images/dog.2258.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/cat.1313.jpg",
+      "label": "cat"
+    },
+    {
+      "image": "images/dog.12482.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/dog.7561.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/dog.3776.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/cat.9710.jpg",
+      "label": "cat"
+    },
+    {
+      "image": "images/dog.2977.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/dog.6507.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/dog.9317.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/dog.150.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/dog.357.jpg",
+      "label": "dog"
+    },
+    {
+      "image": "images/dog.3077.jpg",
+      "label": "dog"
+    }
+  ]
+}
