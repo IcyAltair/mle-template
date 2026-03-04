@@ -1,6 +1,7 @@
 import argparse
 import configparser
-import pickle
+import datetime as dt
+import json
 import sys
 import traceback
 from pathlib import Path
@@ -11,13 +12,14 @@ import numpy as np
 import torch
 from PIL import Image
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.model_selection import train_test_split
 from torch import nn
 from torchvision import models
 from torchvision.transforms import transforms
+from tqdm import tqdm
 
 from src.logger import Logger
-
 
 PathLike = Union[str, Path]
 
@@ -58,12 +60,14 @@ class CatVDogModel:
         e = self.config["EMBEDDINGS"] if "EMBEDDINGS" in self.config else {}
         img_resize = int(e.get("img_resize", 256))
         img_crop = int(e.get("img_crop", 224))
-        return transforms.Compose([
-            transforms.Resize(img_resize),
-            transforms.CenterCrop(img_crop),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
+        return transforms.Compose(
+            [
+                transforms.Resize(img_resize),
+                transforms.CenterCrop(img_crop),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        )
 
     def _get_logreg_params(self, section: str = "LOG_REG") -> Dict[str, Any]:
         if section not in self.config:
@@ -72,14 +76,19 @@ class CatVDogModel:
         cfg = self.config[section]
 
         params: Dict[str, Any] = {}
-        if "max_iter" in cfg: params["max_iter"] = cfg.getint("max_iter")
-        if "C" in cfg: params["C"] = cfg.getfloat("C")
-        if "solver" in cfg: params["solver"] = cfg.get("solver")
-        if "penalty" in cfg: params["penalty"] = cfg.get("penalty")
+        if "max_iter" in cfg:
+            params["max_iter"] = cfg.getint("max_iter")
+        if "C" in cfg:
+            params["C"] = cfg.getfloat("C")
+        if "solver" in cfg:
+            params["solver"] = cfg.get("solver")
+        if "penalty" in cfg:
+            params["penalty"] = cfg.get("penalty")
         if "class_weight" in cfg:
             cw = cfg.get("class_weight")
             params["class_weight"] = None if cw.lower() == "none" else cw
-        if "random_state" in cfg: params["random_state"] = cfg.getint("random_state")
+        if "random_state" in cfg:
+            params["random_state"] = cfg.getint("random_state")
 
         n_jobs = cfg.get("n_jobs", fallback=None)
         if n_jobs is not None:
@@ -96,6 +105,53 @@ class CatVDogModel:
             "random_state": s.getint("random_state", fallback=42),
             "stratify": s.getboolean("stratify", fallback=True),
         }
+
+    def _next_experiment_dir(self, experiments_dir: PathLike) -> Path:
+        root = Path(experiments_dir)
+        root.mkdir(parents=True, exist_ok=True)
+
+        existing = [p for p in root.iterdir() if p.is_dir() and p.name.startswith("exp_")]
+        max_id = 0
+        for p in existing:
+            parts = p.name.split("_", 2)
+            if len(parts) >= 2 and parts[1].isdigit():
+                max_id = max(max_id, int(parts[1]))
+
+        exp_id = max_id + 1
+        ts = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        name = f"exp_{exp_id:04d}_{ts}"
+        out = root / name
+        out.mkdir(parents=True, exist_ok=False)
+        return out
+
+    def _dump_json(self, path: PathLike, obj: Dict[str, Any]) -> None:
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with open(p, "w", encoding="utf-8") as f:
+            json.dump(obj, f, ensure_ascii=False, indent=2)
+
+    def _load_json(self, path: PathLike) -> Optional[Dict[str, Any]]:
+        p = Path(path)
+        if not p.exists():
+            return None
+        try:
+            with open(p, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return None
+
+    def _is_better(self, cur: Dict[str, Any], best: Optional[Dict[str, Any]]) -> bool:
+        if best is None:
+            return True
+        cur_f1 = float(cur.get("f1", -1.0))
+        best_f1 = float(best.get("f1", -1.0))
+        if cur_f1 > best_f1:
+            return True
+        if cur_f1 < best_f1:
+            return False
+        cur_acc = float(cur.get("accuracy", -1.0))
+        best_acc = float(best.get("accuracy", -1.0))
+        return cur_acc > best_acc
 
     def set_device(self, device: str) -> None:
         if device == "cuda" and not torch.cuda.is_available():
@@ -120,7 +176,9 @@ class CatVDogModel:
     def save_classifier(self, path: PathLike) -> None:
         if self.classifier is None:
             raise RuntimeError("Classifier is not trained/loaded")
-        joblib.dump(self.classifier, str(path))
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(self.classifier, str(p))
 
     def _ensure_ready(self, classifier: Optional[Any] = None) -> Any:
         clf = classifier if classifier is not None else self.classifier
@@ -233,6 +291,7 @@ class CatVDogModel:
         shuffle: bool = True,
         seed: int = 42,
         skip_errors: bool = True,
+        data_frac: float = 1.0,
     ) -> Tuple[np.ndarray, np.ndarray]:
         dir_path = Path(data_dir)
         if not dir_path.exists() or not dir_path.is_dir():
@@ -242,17 +301,39 @@ class CatVDogModel:
         pattern = "**/*" if recursive else "*"
         all_files = [p for p in dir_path.glob(pattern) if p.is_file() and p.suffix.lower() in exts_l]
 
+        if not (0.0 < data_frac <= 1.0):
+            raise ValueError("data_frac must be in (0, 1]")
+
+        rng = np.random.default_rng(seed)
+
+        files_by_class: Dict[int, List[Path]] = {}
+        for p in all_files:
+            prefix = p.name.split(".", 1)[0]
+            if prefix not in class_map:
+                continue
+            y = int(class_map[prefix])
+            files_by_class.setdefault(y, []).append(p)
+
+        selected: List[Path] = []
+        for y, files in files_by_class.items():
+            if len(files) == 0:
+                continue
+            if shuffle:
+                rng.shuffle(files)
+            n_take = max(1, int(len(files) * float(data_frac)))
+            selected.extend(files[:n_take])
+
         if shuffle:
-            rng = np.random.default_rng(seed)
-            rng.shuffle(all_files)
+            rng.shuffle(selected)
+
+        all_files = selected
 
         counts: Dict[int, int] = {}
         X_list: List[np.ndarray] = []
         y_list: List[int] = []
 
-        for p in all_files:
-            stem = p.name.split(".")[0]
-            prefix = stem.split("_")[0]
+        for p in tqdm(all_files, desc="Extracting embeddings", unit="img"):
+            prefix = p.name.split(".", 1)[0]
             if prefix not in class_map:
                 continue
 
@@ -280,14 +361,14 @@ class CatVDogModel:
         return X, y
 
     def train_classifier(
-            self,
-            X: np.ndarray,
-            y: np.ndarray,
-            test_size: Optional[float] = None,
-            random_state: Optional[int] = None,
-            stratify: Optional[bool] = None,
-            model_key: str = "LOG_REG",
-            **override_logreg_kwargs: Any,
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        test_size: Optional[float] = None,
+        random_state: Optional[int] = None,
+        stratify: Optional[bool] = None,
+        model_key: str = "LOG_REG",
+        **override_logreg_kwargs: Any,
     ) -> Dict[str, Any]:
         if X.ndim != 2:
             raise ValueError("X must be 2D array: (n_samples, n_features)")
@@ -315,9 +396,16 @@ class CatVDogModel:
         self.classifier = clf
 
         y_pred = clf.predict(X_test)
-        acc = float((y_pred == y_test).mean())
 
-        return {"accuracy": acc, "n_train": int(len(y_train)), "n_test": int(len(y_test))}
+        metrics = {
+            "accuracy": float(accuracy_score(y_test, y_pred)),
+            "precision": float(precision_score(y_test, y_pred, average="binary", pos_label=1)),
+            "recall": float(recall_score(y_test, y_pred, average="binary", pos_label=1)),
+            "f1": float(f1_score(y_test, y_pred, average="binary", pos_label=1)),
+            "n_train": int(len(y_train)),
+            "n_test": int(len(y_test)),
+        }
+        return metrics
 
     def build_cli(self) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description="EmbeddingLogRegService")
@@ -328,9 +416,12 @@ class CatVDogModel:
         parser.add_argument("--recursive", action="store_true")
         parser.add_argument("--return_paths", action="store_true")
         parser.add_argument("--skip_errors", action="store_true")
-        parser.add_argument("--out", type=str, default="logreg_model.pkl")
         parser.add_argument("--test_size", type=float, default=0.2)
         parser.add_argument("--seed", type=int, default=42)
+        parser.add_argument("--data_frac", type=float, default=1.0)
+        parser.add_argument("--experiments_dir", type=str, default="experiments")
+        parser.add_argument("--best_dir", type=str, default="experiments")
+        parser.add_argument("--best_metric", type=str, default="f1", choices=["f1", "accuracy", "precision", "recall"])
         return parser
 
     def run_from_args(self, args: argparse.Namespace) -> Any:
@@ -354,6 +445,7 @@ class CatVDogModel:
 
         if args.mode == "train":
             class_map = {"cat": 0, "dog": 1}
+
             X, y = self.prepare_training_data_from_dir(
                 args.path,
                 class_map=class_map,
@@ -361,15 +453,99 @@ class CatVDogModel:
                 recursive=getattr(args, "recursive", False),
                 seed=getattr(args, "seed", 42),
                 skip_errors=getattr(args, "skip_errors", True),
+                data_frac=getattr(args, "data_frac", 1.0),
             )
+
             metrics = self.train_classifier(
                 X,
                 y,
                 test_size=getattr(args, "test_size", 0.2),
                 random_state=getattr(args, "seed", 42),
             )
-            self.save_classifier(args.out)
-            return {"mode": "train", "path": args.path, "metrics": metrics, "saved_to": args.out}
+
+            exp_dir = self._next_experiment_dir(getattr(args, "experiments_dir", "experiments"))
+            model_path = exp_dir / "model.pkl"
+            report_path = exp_dir / "report.json"
+
+            self.save_classifier(model_path)
+
+            split_cfg = self._get_split_params()
+            logreg_cfg = self._get_logreg_params("LOG_REG")
+            embeddings_cfg = dict(self.config["EMBEDDINGS"]) if "EMBEDDINGS" in self.config else {}
+
+            report = {
+                "timestamp": exp_dir.name.split("_", 2)[-1] if "_" in exp_dir.name else exp_dir.name,
+                "experiment_dir": str(exp_dir),
+                "data": {
+                    "path": str(args.path),
+                    "data_frac": float(getattr(args, "data_frac", 1.0)),
+                    "n_samples": int(len(y)),
+                    "class_map": class_map,
+                },
+                "device": str(args.device),
+                "split": {
+                    "test_size": float(getattr(args, "test_size", split_cfg.get("test_size", 0.2))),
+                    "random_state": int(getattr(args, "seed", split_cfg.get("random_state", 42))),
+                    "stratify": bool(split_cfg.get("stratify", True)),
+                },
+                "embeddings": embeddings_cfg,
+                "log_reg": logreg_cfg,
+                "metrics": metrics,
+                "artifacts": {
+                    "model": str(model_path),
+                    "report": str(report_path),
+                },
+            }
+
+            self._dump_json(report_path, report)
+
+            best_root = Path(getattr(args, "best_dir", "experiments"))
+            best_root.mkdir(parents=True, exist_ok=True)
+            best_model_path = best_root / "model.pkl"
+            best_metrics_path = best_root / "model_metrics.json"
+
+            prev_best = self._load_json(best_metrics_path)
+            best_prev_metrics = prev_best.get("metrics") if isinstance(prev_best, dict) else None
+
+            metric_name = str(getattr(args, "best_metric", "f1"))
+            cur_metrics = dict(metrics)
+            cur_score = float(cur_metrics.get(metric_name, -1.0))
+            prev_score = float(best_prev_metrics.get(metric_name, -1.0)) if isinstance(best_prev_metrics, dict) else None
+
+            is_better = False
+            if prev_score is None:
+                is_better = True
+            else:
+                if cur_score > float(prev_score):
+                    is_better = True
+                elif cur_score == float(prev_score):
+                    is_better = self._is_better(cur_metrics, best_prev_metrics)
+
+            updated_best = False
+            if is_better:
+                self.save_classifier(best_model_path)
+                best_payload = {
+                    "updated_at": dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"),
+                    "best_metric": metric_name,
+                    "metrics": cur_metrics,
+                    "from_experiment": str(exp_dir),
+                    "artifacts": {"model": str(best_model_path), "metrics": str(best_metrics_path)},
+                }
+                self._dump_json(best_metrics_path, best_payload)
+                updated_best = True
+
+            return {
+                "mode": "train",
+                "path": args.path,
+                "metrics": metrics,
+                "experiment_dir": str(exp_dir),
+                "experiment_model_path": str(model_path),
+                "experiment_report_path": str(report_path),
+                "best_updated": bool(updated_best),
+                "best_model_path": str(best_model_path),
+                "best_metrics_path": str(best_metrics_path),
+                "best_metric": metric_name,
+            }
 
         raise ValueError(f"Unknown mode: {args.mode}")
 
