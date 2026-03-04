@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import torch
 from PIL import Image
-
+from pathlib import Path
 from src.models.CatVDogModel import CatVDogModel
 
 
@@ -10,7 +10,8 @@ class TestCatVDogPreprocessing(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.model = CatVDogModel(config_path="../../config.ini", show_log=False)
+        ROOT = Path(__file__).resolve().parents[2]
+        cls.model = CatVDogModel(config_path=str(ROOT / "config.ini"), show_log=False)
 
     def test_build_preprocess_returns_compose(self):
         p = self.model.build_preprocess()

@@ -7,4 +7,5 @@ services:
       dockerfile: Dockerfile
     image: akp1n/catdog-api:latest
     ports:
-      - "8000:8000"
+      - "8001:8000"
+    command: ["./entrypoint.sh"]

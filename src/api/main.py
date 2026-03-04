@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import router
+from .routes import router
 from src.models.CatVDogModel import CatVDogModel
 
 app = FastAPI(title="Dog vs Cat API")
