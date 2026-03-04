@@ -55,17 +55,47 @@ class CatVDogModel:
         self.log.info("Service is ready")
 
     def build_preprocess(self) -> transforms.Compose:
-        return transforms.Compose(
-            [
-                transforms.Resize(256),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406],
-                    std=[0.229, 0.224, 0.225],
-                ),
-            ]
-        )
+        e = self.config["EMBEDDINGS"] if "EMBEDDINGS" in self.config else {}
+        img_resize = int(e.get("img_resize", 256))
+        img_crop = int(e.get("img_crop", 224))
+        return transforms.Compose([
+            transforms.Resize(img_resize),
+            transforms.CenterCrop(img_crop),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+
+    def _get_logreg_params(self, section: str = "LOG_REG") -> Dict[str, Any]:
+        if section not in self.config:
+            raise KeyError(f"Config section '{section}' not found")
+
+        cfg = self.config[section]
+
+        params: Dict[str, Any] = {}
+        if "max_iter" in cfg: params["max_iter"] = cfg.getint("max_iter")
+        if "C" in cfg: params["C"] = cfg.getfloat("C")
+        if "solver" in cfg: params["solver"] = cfg.get("solver")
+        if "penalty" in cfg: params["penalty"] = cfg.get("penalty")
+        if "class_weight" in cfg:
+            cw = cfg.get("class_weight")
+            params["class_weight"] = None if cw.lower() == "none" else cw
+        if "random_state" in cfg: params["random_state"] = cfg.getint("random_state")
+
+        n_jobs = cfg.get("n_jobs", fallback=None)
+        if n_jobs is not None:
+            params["n_jobs"] = int(n_jobs)
+
+        return params
+
+    def _get_split_params(self) -> Dict[str, Any]:
+        if "SPLIT" not in self.config:
+            return {"test_size": 0.2, "random_state": 42, "stratify": True}
+        s = self.config["SPLIT"]
+        return {
+            "test_size": s.getfloat("test_size", fallback=0.2),
+            "random_state": s.getint("random_state", fallback=42),
+            "stratify": s.getboolean("stratify", fallback=True),
+        }
 
     def set_device(self, device: str) -> None:
         if device == "cuda" and not torch.cuda.is_available():
@@ -84,8 +114,7 @@ class CatVDogModel:
             raise KeyError(f"Missing 'path' in config section '{model_key}'")
 
         p = self.config[model_key]["path"]
-        with open(p, "rb") as f:
-            self.classifier = pickle.load(f)
+        self.classifier = joblib.load(p)
         return self.classifier
 
     def save_classifier(self, path: PathLike) -> None:
@@ -251,84 +280,51 @@ class CatVDogModel:
         return X, y
 
     def train_classifier(
-        self,
-        X: np.ndarray,
-        y: np.ndarray,
-        test_size: float = 0.2,
-        random_state: int = 42,
-        stratify: bool = True,
-        max_iter: int = 1000,
-        n_jobs: int = -1,
-        **logreg_kwargs: Any,
+            self,
+            X: np.ndarray,
+            y: np.ndarray,
+            test_size: Optional[float] = None,
+            random_state: Optional[int] = None,
+            stratify: Optional[bool] = None,
+            model_key: str = "LOG_REG",
+            **override_logreg_kwargs: Any,
     ) -> Dict[str, Any]:
         if X.ndim != 2:
             raise ValueError("X must be 2D array: (n_samples, n_features)")
         if y.ndim != 1:
             raise ValueError("y must be 1D array: (n_samples,)")
 
+        split_cfg = self._get_split_params()
+        ts = split_cfg["test_size"] if test_size is None else float(test_size)
+        rs = split_cfg["random_state"] if random_state is None else int(random_state)
+        st = split_cfg["stratify"] if stratify is None else bool(stratify)
+
         X_train, X_test, y_train, y_test = train_test_split(
             X,
             y,
-            test_size=test_size,
-            random_state=random_state,
-            stratify=y if stratify else None,
+            test_size=ts,
+            random_state=rs,
+            stratify=y if st else None,
         )
 
-        clf = LogisticRegression(max_iter=max_iter, n_jobs=n_jobs, **logreg_kwargs)
+        logreg_params = self._get_logreg_params(model_key)
+        logreg_params.update(override_logreg_kwargs)
+
+        clf = LogisticRegression(**logreg_params)
         clf.fit(X_train, y_train)
         self.classifier = clf
 
         y_pred = clf.predict(X_test)
         acc = float((y_pred == y_test).mean())
 
-        return {
-            "accuracy": acc,
-            "n_train": int(len(y_train)),
-            "n_test": int(len(y_test)),
-        }
+        return {"accuracy": acc, "n_train": int(len(y_train)), "n_test": int(len(y_test))}
 
     def build_cli(self) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description="EmbeddingLogRegService")
-
-        parser.add_argument(
-            "-m",
-            "--model",
-            type=str,
-            required=True,
-            default="LOG_REG",
-            const="LOG_REG",
-            nargs="?",
-            choices=["LOG_REG"],
-        )
-        parser.add_argument(
-            "-d",
-            "--device",
-            type=str,
-            required=True,
-            default="cpu",
-            const="cpu",
-            nargs="?",
-            choices=["cpu", "cuda", "mps"],
-        )
-        parser.add_argument(
-            "-md",
-            "--mode",
-            type=str,
-            required=True,
-            default="single",
-            const="single",
-            nargs="?",
-            choices=["single", "directory", "train"],
-        )
-        parser.add_argument(
-            "-pth",
-            "--path",
-            type=str,
-            required=True,
-            default="",
-            const="",
-            nargs="?",
-        )
+        parser.add_argument("--model", type=str, default="LOG_REG", choices=["LOG_REG"])
+        parser.add_argument("--device", type=str, default="cpu", choices=["cpu", "cuda", "mps"])
+        parser.add_argument("--mode", type=str, default="single", choices=["single", "directory", "train"])
+        parser.add_argument("--path", type=str, default="")
         parser.add_argument("--recursive", action="store_true")
         parser.add_argument("--return_paths", action="store_true")
         parser.add_argument("--skip_errors", action="store_true")

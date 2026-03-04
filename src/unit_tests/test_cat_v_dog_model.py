@@ -1,4 +1,3 @@
-import os
 import unittest
 import numpy as np
 import torch
@@ -11,7 +10,7 @@ class TestCatVDogPreprocessing(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.model = CatVDogModel(config_path="config.ini", show_log=False)
+        cls.model = CatVDogModel(config_path="../../config.ini", show_log=False)
 
     def test_build_preprocess_returns_compose(self):
         p = self.model.build_preprocess()
