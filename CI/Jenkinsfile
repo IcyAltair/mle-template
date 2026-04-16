@@ -13,6 +13,7 @@ options {
         skipDefaultCheckout(true)
 	}
     stages {
+        node('windows') {
         stage('Clone github repository') {
             steps {
                 cleanWs()
@@ -91,11 +92,12 @@ options {
                 bat 'chcp 65001 && docker push altairzero/mle-template:latest'
             }
         }
-	}
 
     post {
         always {
             bat 'chcp 65001 && docker logout'
+                }
+            }
         }
     }
 }
