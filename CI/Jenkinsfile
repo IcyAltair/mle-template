@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDS=credentials('mle-template')
+        DOCKERHUB_CREDS=credentials('devops_laba1')
         LC_ALL = "en_US.UTF-8"
         LANG    = "en_US.UTF-8"
         LANGUAGE = "en_US.UTF-8"
@@ -16,13 +16,13 @@ options {
         stage('Clone github repository') {
             steps {
                 cleanWs()
-                bat 'chcp 65001 && git clone -b main https://github.com/IcyAltair/mle-template.git'
+                bat 'chcp 65001 && git clone -b main https://github.com/Nikita-123-orange/devops_laba1.git'
 				}
 			}
 
         stage('Checkout repo dir') {
             steps {
-                bat 'chcp 65001 && cd mle-template && dir'
+                bat 'chcp 65001 && cd devops_laba1 && dir'
 				}
 			}
 
@@ -30,8 +30,8 @@ options {
             steps{
                 //withCredentials([usernamePassword(credentialsId: 'mle-template', passwordVariable: 'DOCKER_REGISTRY_PWD', usernameVariable: 'DOCKER_REGISTRY_USER')]){
                 //bat 'chcp 65001 && echo %DOCKER_REGISTRY_PWD% | docker login -u %DOCKER_REGISTRY_USER% --password-stdin'}
-                //bat 'chcp 65001 && echo %DOCKERHUB_CREDS_PSW% | docker login -u %DOCKERHUB_CREDS_USR% --password-stdin'
-                bat 'chcp 65001 && docker login -u %DOCKERHUB_CREDS_USR% -p %DOCKERHUB_CREDS_PSW%'
+                bat 'chcp 65001 && echo %DOCKERHUB_CREDS_PSW% | docker login -u %DOCKERHUB_CREDS_USR% --password-stdin'
+                //bat 'chcp 65001 && docker login -u %DOCKERHUB_CREDS_USR% -p %DOCKERHUB_CREDS_PSW%'
                 }
             }
 
@@ -39,13 +39,13 @@ options {
             steps {
                 script {
                     try {
-                        bat 'chcp 65001 && cd mle-template && docker-compose build'
+                        bat 'chcp 65001 && cd devops_laba1 && docker-compose build'
                         }
 
                     finally {
                     bat '''
                         chcp 65001
-                        cd mle-template
+                        cd devops_laba1
                         docker-compose up -d
                         '''
                         }
@@ -60,10 +60,10 @@ options {
 
         stage('Checkout container logs') {
             steps {
-                dir("mle-template") {
+                dir("devops_laba1") {
                         bat '''
                             docker-compose up -d
-                            for /f %%i in ('docker ps -qf "name=^mle-template-web-1"') do set containerId=%%i
+                            for /f %%i in ('docker ps -qf "name=^devops_laba1"') do set containerId=%%i
                             echo %containerId%
                             IF "%containerId%" == "" (
                                 echo "No container running"
@@ -78,7 +78,7 @@ options {
 
         stage('Checkout coverage report'){
             steps{
-                dir("mle-template"){
+                dir("devops_laba1"){
                     bat '''
                     docker-compose logs -t --tail 10
                     '''
@@ -88,7 +88,7 @@ options {
 
         stage('Push'){
             steps{
-                bat 'chcp 65001 && docker push altairzero/mle-template:latest'
+                bat 'chcp 65001 && docker push devops/laba1:latest'
             }
         }
 	}
