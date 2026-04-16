@@ -1,9 +1,6 @@
 pipeline {
-    agent {
-        node {
-                label 'windows'
-            }
-    }
+    agent any
+
     environment {
         DOCKERHUB_CREDS=credentials('mle-template')
         LC_ALL = "en_US.UTF-8"
@@ -16,16 +13,14 @@ options {
         skipDefaultCheckout(true)
 	}
     stages {
-        stage('Clone github repository') {
-            steps {
-                cleanWs()
-                    script{
-                        node('windows'){
-                            bat 'chcp 65001 && git clone -b main https://github.com/IcyAltair/mle-template.git'
-                        }
+        node {
+            stage('Clone github repository') {
+                steps {
+                    cleanWs()
+                    bat 'chcp 65001 && git clone -b main https://github.com/IcyAltair/mle-template.git'
                     }
-				}
-			}
+                }
+        }
 
         stage('Checkout repo dir') {
             steps {
