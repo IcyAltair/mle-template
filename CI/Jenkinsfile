@@ -13,6 +13,9 @@ options {
         skipDefaultCheckout(true)
 	}
     stages {
+		
+		node {
+			
         stage('Clone github repository') {
             steps {
                 cleanWs()
@@ -89,8 +92,9 @@ options {
         stage('Push'){
             steps{
                 bat 'chcp 65001 && docker push altairzero/mle-template:latest'
-            }
-        }
+            	}
+        	}
+		}
 	}
 
     post {
