@@ -11,9 +11,7 @@ pipeline {
 options {
         timestamps()
         skipDefaultCheckout(true)
-	}
-    stages {
-		
+	}	
 		node {
 			
         stage('Clone github repository') {
@@ -95,7 +93,7 @@ options {
             	}
         	}
 		}
-	}
+	
 
     post {
         always {
