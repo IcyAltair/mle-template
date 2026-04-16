@@ -13,11 +13,14 @@ options {
         skipDefaultCheckout(true)
 	}
     stages {
-        node('windows') {
         stage('Clone github repository') {
             steps {
                 cleanWs()
-                bat 'chcp 65001 && git clone -b main https://github.com/IcyAltair/mle-template.git'
+                    script{
+                        node('windows'){
+                            bat 'chcp 65001 && git clone -b main https://github.com/IcyAltair/mle-template.git'
+                        }
+                    }
 				}
 			}
 
@@ -92,12 +95,11 @@ options {
                 bat 'chcp 65001 && docker push altairzero/mle-template:latest'
             }
         }
+	}
 
     post {
         always {
             bat 'chcp 65001 && docker logout'
-                }
-            }
         }
     }
 }
