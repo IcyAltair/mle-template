@@ -1,6 +1,9 @@
 pipeline {
-    agent any
-
+    agent {
+        node {
+                label 'windows'
+            }
+    }
     environment {
         DOCKERHUB_CREDS=credentials('mle-template')
         LC_ALL = "en_US.UTF-8"
