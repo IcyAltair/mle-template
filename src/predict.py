@@ -12,7 +12,7 @@ import time
 import traceback
 import yaml
 
-from logger import Logger
+from src.logger import Logger
 
 SHOW_LOG = True
 
