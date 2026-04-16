@@ -13,14 +13,12 @@ options {
         skipDefaultCheckout(true)
 	}
     stages {
-        node {
-            stage('Clone github repository') {
-                steps {
-                    cleanWs()
-                    bat 'chcp 65001 && git clone -b main https://github.com/IcyAltair/mle-template.git'
-                    }
-                }
-        }
+        stage('Clone github repository') {
+            steps {
+                cleanWs()
+                bat 'chcp 65001 && git clone -b main https://github.com/IcyAltair/mle-template.git'
+				}
+			}
 
         stage('Checkout repo dir') {
             steps {
@@ -97,7 +95,9 @@ options {
 
     post {
         always {
-            bat 'chcp 65001 && docker logout'
+            node('windows') {
+                bat 'chcp 65001 && docker logout'
+            }
         }
     }
 }
