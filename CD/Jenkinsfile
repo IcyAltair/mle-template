@@ -42,7 +42,9 @@ options {
 
     post {
         always {
-            bat 'docker stop mle-template && docker logout'
+            node('windows') {
+                bat 'docker stop mle-template && docker logout'
+            }
         }
     }
 }
