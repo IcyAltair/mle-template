@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDS=credentials('devops_laba1')
+        DOCKERHUB_CREDS=credentials('docker')
         LC_ALL = "en_US.UTF-8"
         LANG    = "en_US.UTF-8"
         LANGUAGE = "en_US.UTF-8"
@@ -30,8 +30,8 @@ options {
             steps{
                 //withCredentials([usernamePassword(credentialsId: 'mle-template', passwordVariable: 'DOCKER_REGISTRY_PWD', usernameVariable: 'DOCKER_REGISTRY_USER')]){
                 //bat 'chcp 65001 && echo %DOCKER_REGISTRY_PWD% | docker login -u %DOCKER_REGISTRY_USER% --password-stdin'}
-                bat 'chcp 65001 && echo %DOCKERHUB_CREDS_PSW% | docker login -u %DOCKERHUB_CREDS_USR% --password-stdin'
-                //bat 'chcp 65001 && docker login -u %DOCKERHUB_CREDS_USR% -p %DOCKERHUB_CREDS_PSW%'
+                //bat 'chcp 65001 && echo %DOCKERHUB_CREDS_PSW% | docker login -u %DOCKERHUB_CREDS_USR% --password-stdin'
+                bat 'chcp 65001 && docker login -u %DOCKERHUB_CREDS_USR% -p %DOCKERHUB_CREDS_PSW%'
                 }
             }
 
@@ -63,7 +63,7 @@ options {
                 dir("devops_laba1") {
                         bat '''
                             docker-compose up -d
-                            for /f %%i in ('docker ps -qf "name=^devops_laba1"') do set containerId=%%i
+                            for /f %%i in ('docker ps -qf "name=^devops_laba1-web-1"') do set containerId=%%i
                             echo %containerId%
                             IF "%containerId%" == "" (
                                 echo "No container running"
@@ -95,7 +95,9 @@ options {
 
     post {
         always {
-            bat 'chcp 65001 && docker logout'
+            node('windows') {
+                bat 'chcp 65001 && docker logout'
+            }
         }
     }
 }
